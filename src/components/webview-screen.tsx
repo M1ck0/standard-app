@@ -214,7 +214,7 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
             }
           }}
           onError={handleError}
-          decelerationRate="normal"
+          decelerationRate={Platform.OS === 'ios' ? 'normal' : undefined}
           allowsBackForwardNavigationGestures={!isArticle}
         />
         {isArticle && loading && <ArticleSkeleton />}

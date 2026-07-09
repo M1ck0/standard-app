@@ -9,7 +9,7 @@ export default function TabsLayout() {
     <NativeTabs
       backgroundColor={TAB_BG}
       blurEffect="none"
-      tintColor={GOLD}
+      // tintColor={GOLD}
       disableTransparentOnScrollEdge
       iconColor={{ default: TAB_LABEL, selected: GOLD }}
       indicatorColor={GOLD}
