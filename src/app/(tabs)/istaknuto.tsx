@@ -1,5 +1,6 @@
 import { WebViewScreen } from '@/components/webview-screen';
+import { siteUrl } from '@/constants/site';
 
 export default function IstaknutoTab() {
-  return <WebViewScreen homeUrl="https://standard.co.me/istaknuto" />;
+  return <WebViewScreen homeUrl={siteUrl('/istaknuto')} />;
 }

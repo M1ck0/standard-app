@@ -2,19 +2,24 @@
   "expo": {
     "name": "standard",
     "slug": "standard-new",
-    "version": "1.0.0",
+    "version": "8.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "standard",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.qlql.standard",
+      "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification"],
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
-      "package": "com.qlql.standard",
+      "package": "com.app.standard",
+      "versionCode": 6006,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
