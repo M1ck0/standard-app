@@ -9,14 +9,15 @@ export default function TabsLayout() {
     <NativeTabs
       backgroundColor={TAB_BG}
       blurEffect="none"
-      // tintColor={GOLD}
+      tintColor={GOLD}
       disableTransparentOnScrollEdge
       iconColor={{ default: TAB_LABEL, selected: GOLD }}
-      indicatorColor={GOLD}
+      indicatorColor={`${GOLD}30`}
       labelStyle={{
         default: { color: TAB_LABEL, fontSize: 11 },
         selected: { color: TAB_LABEL, fontSize: 11, fontWeight: "700" },
       }}
+      labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Naslovna</NativeTabs.Trigger.Label>
