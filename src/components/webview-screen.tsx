@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import WebView from 'react-native-webview';
+import type { WebViewErrorEvent } from 'react-native-webview/lib/WebViewTypes';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackHandler, Image, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
@@ -53,6 +54,22 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
   // popping the native screen. Ignore canGoBack until the first load actually
   // finishes, so only *real* in-page navigations afterward count.
   const hasLoadedOnce = useRef(false);
+  // react-native-webview's native pull-to-refresh (iOS) occasionally hands the
+  // underlying WKWebView an empty URL to reload, which fails immediately with
+  // NSURLErrorDomain -1004 "Could not connect to the server" even though the
+  // page had already loaded fine. Recover by asking the page's own JS to
+  // reload itself, which goes through the normal web navigation path instead
+  // of the native reload() call that misfired. Guarded to retry once per
+  // failure so a genuine connectivity problem doesn't loop forever.
+  const didAttemptReloadRecovery = useRef(false);
+
+  const handleError = useCallback((event: WebViewErrorEvent) => {
+    const { code, url, domain } = event.nativeEvent;
+    if (hasLoadedOnce.current && !didAttemptReloadRecovery.current && domain === 'NSURLErrorDomain' && code === -1004 && !url) {
+      didAttemptReloadRecovery.current = true;
+      webViewRef.current?.injectJavaScript('window.location.reload(); true;');
+    }
+  }, []);
 
   // When `onBack` is set this screen is a pushed article: it shows a back button
   // (which pops the native route) and a share action. Category listing pages
@@ -190,11 +207,13 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
           }}
           onLoadEnd={() => {
             setLoading(false);
+            didAttemptReloadRecovery.current = false;
             if (!hasLoadedOnce.current) {
               hasLoadedOnce.current = true;
               setCanGoBack(false);
             }
           }}
+          onError={handleError}
           decelerationRate="normal"
           allowsBackForwardNavigationGestures={!isArticle}
         />
