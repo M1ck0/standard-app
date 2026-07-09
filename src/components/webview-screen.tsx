@@ -6,12 +6,15 @@ import { BackHandler, Image, Platform, Pressable, Share, StyleSheet, View } from
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
-import { SITE_HOST } from '@/constants/site';
+import { SITE_HOST, siteUrl } from '@/constants/site';
+import { CategoryBar } from '@/components/category-bar';
+import { ArticleSkeleton } from '@/components/article-skeleton';
 
 const ICON_SIZE = 22;
 const ICON_COLOR = '#111';
 
 const LOGO_ASPECT_RATIO = 2986 / 699;
+const LOGO_HEIGHT = 34;
 
 // Appended to the WebView's User-Agent so the website knows it's rendered inside
 // the native app and hides its own header/bottom nav/footer/ads (see the site's
@@ -42,17 +45,31 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(homeUrl);
+  const [loading, setLoading] = useState(true);
+  // WKWebView sometimes reports `canGoBack: true` after the very first load
+  // (e.g. an https/trailing-slash redirect adds a phantom history entry), which
+  // made the back button silently no-op instead of leaving the article — it
+  // called the WebView's own internal goBack() into that redirect instead of
+  // popping the native screen. Ignore canGoBack until the first load actually
+  // finishes, so only *real* in-page navigations afterward count.
+  const hasLoadedOnce = useRef(false);
 
-  // When `onBack` is set this screen is a pushed article: it always shows a back
-  // button (which pops the native route) and a share action.
+  // When `onBack` is set this screen is a pushed article: it shows a back button
+  // (which pops the native route) and a share action. Category listing pages
+  // (browsing within a tab) show neither — only the post/article screen does.
   const isArticle = !!onBack;
   const isDetailPage = pathnameOf(currentUrl) !== pathnameOf(homeUrl);
-  const showBack = isArticle || isDetailPage;
-  const showActions = isArticle || isDetailPage;
+  const showBack = isArticle;
+  const showActions = isArticle;
+  const showCategories = !isArticle;
 
   const goHome = useCallback(() => {
     webViewRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(homeUrl)}; true;`);
   }, [homeUrl]);
+
+  const navigateToPath = useCallback((path: string) => {
+    webViewRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(siteUrl(path))}; true;`);
+  }, []);
 
   const handleBack = useCallback(() => {
     if (canGoBack) {
@@ -63,10 +80,6 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
       goHome();
     }
   }, [canGoBack, onBack, goHome]);
-
-  const refresh = useCallback(() => {
-    webViewRef.current?.reload();
-  }, []);
 
   const share = useCallback(() => {
     Share.share({ message: currentUrl });
@@ -119,25 +132,24 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
           { paddingTop: insets.top + 10, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 },
         ]}>
         <View style={styles.leftGroup}>
-          {showBack ? (
+          {showBack && (
             <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)}>
               <Pressable style={styles.circleButton} onPress={handleBack} hitSlop={8}>
                 <Ionicons name="chevron-back" size={ICON_SIZE} color={ICON_COLOR} style={styles.backIcon} />
               </Pressable>
             </Animated.View>
-          ) : (
-            <Image
-              source={require('../../assets/images/splash-icon.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
           )}
         </View>
 
+        <View style={styles.logoWrap}>
+          <Image
+            source={require('../../assets/images/splash-icon.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+
         <Animated.View layout={LinearTransition.duration(220)} style={styles.rightGroup}>
-          <Pressable style={styles.circleButton} onPress={refresh} hitSlop={8}>
-            <Ionicons name="reload" size={ICON_SIZE} color={ICON_COLOR} />
-          </Pressable>
           {showActions && (
             <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)}>
               <Pressable style={styles.circleButton} onPress={share} hitSlop={8}>
@@ -147,6 +159,15 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
           )}
         </Animated.View>
       </Animated.View>
+
+      {showCategories && (
+        <CategoryBar
+          activePath={pathnameOf(currentUrl)}
+          onSelect={navigateToPath}
+          insetLeft={insets.left}
+          insetRight={insets.right}
+        />
+      )}
 
       <View
         style={[
@@ -159,14 +180,25 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
           source={{ uri: homeUrl }}
           style={styles.webview}
           applicationNameForUserAgent={IN_APP_USER_AGENT}
+          pullToRefreshEnabled
           onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
           onNavigationStateChange={(navState) => {
-            setCanGoBack(navState.canGoBack);
+            if (hasLoadedOnce.current) {
+              setCanGoBack(navState.canGoBack);
+            }
             setCurrentUrl(navState.url);
+          }}
+          onLoadEnd={() => {
+            setLoading(false);
+            if (!hasLoadedOnce.current) {
+              hasLoadedOnce.current = true;
+              setCanGoBack(false);
+            }
           }}
           decelerationRate="normal"
           allowsBackForwardNavigationGestures={!isArticle}
         />
+        {isArticle && loading && <ArticleSkeleton />}
       </View>
     </View>
   );
@@ -187,18 +219,29 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E2E2',
   },
   leftGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     minHeight: 40,
   },
   rightGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    minHeight: 40,
     gap: 10,
   },
+  logoWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+  },
   logo: {
-    width: Math.round(24 * LOGO_ASPECT_RATIO),
-    height: 24,
+    width: Math.round(LOGO_HEIGHT * LOGO_ASPECT_RATIO),
+    height: LOGO_HEIGHT,
   },
   circleButton: {
     width: 40,

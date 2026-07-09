@@ -1,6 +1,4 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { VectorIcon } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 const GOLD = "#DAA520";
 const TAB_BG = "#FFFFFF";
@@ -23,31 +21,31 @@ export default function TabsLayout() {
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Naslovna</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={<VectorIcon family={Ionicons} name="home-outline" />}
+          src={require("../../../assets/images/tabIcons/naslovna.png")}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="istaknuto">
         <NativeTabs.Trigger.Label>Istaknuto</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={<VectorIcon family={Ionicons} name="star-outline" />}
+          src={require("../../../assets/images/tabIcons/istaknuto.png")}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="najnovije">
         <NativeTabs.Trigger.Label>Najnovije</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={<VectorIcon family={Ionicons} name="time-outline" />}
+          src={require("../../../assets/images/tabIcons/najnovije.png")}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="video">
         <NativeTabs.Trigger.Label>Video</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={<VectorIcon family={Ionicons} name="play-circle-outline" />}
+          src={require("../../../assets/images/tabIcons/video.png")}
         />
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="pretraga">
         <NativeTabs.Trigger.Label>Pretraga</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          src={<VectorIcon family={Ionicons} name="search-outline" />}
+          src={require("../../../assets/images/tabIcons/pretraga.png")}
         />
       </NativeTabs.Trigger>
     </NativeTabs>
