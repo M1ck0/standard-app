@@ -1,18 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import WebView from 'react-native-webview';
-import type { WebViewErrorEvent } from 'react-native-webview/lib/WebViewTypes';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BackHandler, Image, Platform, Pressable, Share, StyleSheet, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useRef, useState } from "react";
+import WebView from "react-native-webview";
+import type { WebViewErrorEvent } from "react-native-webview/lib/WebViewTypes";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  BackHandler,
+  Image,
+  Platform,
+  Pressable,
+  Share,
+  StyleSheet,
+  View,
+} from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
 
-import { SITE_HOST, siteUrl } from '@/constants/site';
-import { CategoryBar } from '@/components/category-bar';
-import { ArticleSkeleton } from '@/components/article-skeleton';
+import { SITE_HOST, siteUrl } from "@/constants/site";
+import { CategoryBar } from "@/components/category-bar";
+import { ArticleSkeleton } from "@/components/article-skeleton";
 
 const ICON_SIZE = 22;
-const ICON_COLOR = '#111';
+const ICON_COLOR = "#000";
 
 const LOGO_ASPECT_RATIO = 2986 / 699;
 const LOGO_HEIGHT = 34;
@@ -20,27 +32,33 @@ const LOGO_HEIGHT = 34;
 // Appended to the WebView's User-Agent so the website knows it's rendered inside
 // the native app and hides its own header/bottom nav/footer/ads (see the site's
 // `_document.js` `in-app` detection), which the native chrome + tab bar replace.
-const IN_APP_USER_AGENT = 'standard-mobile-app';
+const IN_APP_USER_AGENT = "standard-mobile-app";
 
 // Hermes doesn't reliably implement the URL global without a polyfill, so these
 // parse the host/pathname with regexes instead of relying on `new URL(...)`.
 function pathnameOf(url: string) {
-  const path = url.match(/^[a-zA-Z][\w+.-]*:\/\/[^/]+(\/[^?#]*)?/)?.[1] || '/';
-  return path.replace(/\/$/, '') || '/';
+  const path = url.match(/^[a-zA-Z][\w+.-]*:\/\/[^/]+(\/[^?#]*)?/)?.[1] || "/";
+  return path.replace(/\/$/, "") || "/";
 }
 
 function hostOf(url: string) {
-  return url.match(/^[a-zA-Z][\w+.-]*:\/\/([^/?#]+)/)?.[1] || '';
+  return url.match(/^[a-zA-Z][\w+.-]*:\/\/([^/?#]+)/)?.[1] || "";
 }
 
 // An article is a same-site URL with a category + slug (2+ path segments), e.g.
 // `/politika/some-slug`. Category/listing pages have a single segment (`/politika`).
 function isArticleUrl(url: string) {
   if (!hostOf(url).endsWith(SITE_HOST)) return false;
-  return pathnameOf(url).split('/').filter(Boolean).length >= 2;
+  return pathnameOf(url).split("/").filter(Boolean).length >= 2;
 }
 
-export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: () => void }) {
+export function WebViewScreen({
+  homeUrl,
+  onBack,
+}: {
+  homeUrl: string;
+  onBack?: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const webViewRef = useRef<WebView>(null);
@@ -65,9 +83,15 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
 
   const handleError = useCallback((event: WebViewErrorEvent) => {
     const { code, url, domain } = event.nativeEvent;
-    if (hasLoadedOnce.current && !didAttemptReloadRecovery.current && domain === 'NSURLErrorDomain' && code === -1004 && !url) {
+    if (
+      hasLoadedOnce.current &&
+      !didAttemptReloadRecovery.current &&
+      domain === "NSURLErrorDomain" &&
+      code === -1004 &&
+      !url
+    ) {
       didAttemptReloadRecovery.current = true;
-      webViewRef.current?.injectJavaScript('window.location.reload(); true;');
+      webViewRef.current?.injectJavaScript("window.location.reload(); true;");
     }
   }, []);
 
@@ -81,11 +105,15 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
   const showCategories = !isArticle;
 
   const goHome = useCallback(() => {
-    webViewRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(homeUrl)}; true;`);
+    webViewRef.current?.injectJavaScript(
+      `window.location.href = ${JSON.stringify(homeUrl)}; true;`,
+    );
   }, [homeUrl]);
 
   const navigateToPath = useCallback((path: string) => {
-    webViewRef.current?.injectJavaScript(`window.location.href = ${JSON.stringify(siteUrl(path))}; true;`);
+    webViewRef.current?.injectJavaScript(
+      `window.location.href = ${JSON.stringify(siteUrl(path))}; true;`,
+    );
   }, []);
 
   const handleBack = useCallback(() => {
@@ -109,7 +137,7 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
       if (request.isTopFrame === false) return true;
       const isOwnPage = pathnameOf(request.url) === pathnameOf(homeUrl);
       if (!isOwnPage && isArticleUrl(request.url)) {
-        router.push({ pathname: '/article', params: { url: request.url } });
+        router.push({ pathname: "/article", params: { url: request.url } });
         return false;
       }
       return true;
@@ -118,7 +146,7 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
   );
 
   useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    if (Platform.OS !== "android") return;
 
     const onAndroidBackPress = () => {
       if (canGoBack) {
@@ -136,7 +164,10 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
       return false;
     };
 
-    const subscription = BackHandler.addEventListener('hardwareBackPress', onAndroidBackPress);
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onAndroidBackPress,
+    );
     return () => subscription.remove();
   }, [canGoBack, onBack, isDetailPage, goHome]);
 
@@ -146,13 +177,30 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
         layout={LinearTransition.duration(220)}
         style={[
           styles.header,
-          { paddingTop: insets.top + 10, paddingLeft: insets.left + 16, paddingRight: insets.right + 16 },
-        ]}>
+          {
+            paddingTop: insets.top + 10,
+            paddingLeft: insets.left + 16,
+            paddingRight: insets.right + 16,
+          },
+        ]}
+      >
         <View style={styles.leftGroup}>
           {showBack && (
-            <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)}>
-              <Pressable style={styles.circleButton} onPress={handleBack} hitSlop={8}>
-                <Ionicons name="chevron-back" size={ICON_SIZE} color={ICON_COLOR} style={styles.backIcon} />
+            <Animated.View
+              entering={FadeIn.duration(180)}
+              exiting={FadeOut.duration(120)}
+            >
+              <Pressable
+                style={styles.circleButton}
+                onPress={handleBack}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="chevron-back"
+                  size={ICON_SIZE}
+                  color={ICON_COLOR}
+                  style={styles.backIcon}
+                />
               </Pressable>
             </Animated.View>
           )}
@@ -160,17 +208,31 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
 
         <View style={styles.logoWrap}>
           <Image
-            source={require('../../assets/images/splash-icon.png')}
+            source={require("../../assets/images/splash-icon.png")}
             style={styles.logo}
             resizeMode="contain"
           />
         </View>
 
-        <Animated.View layout={LinearTransition.duration(220)} style={styles.rightGroup}>
+        <Animated.View
+          layout={LinearTransition.duration(220)}
+          style={styles.rightGroup}
+        >
           {showActions && (
-            <Animated.View entering={FadeIn.duration(180)} exiting={FadeOut.duration(120)}>
-              <Pressable style={styles.circleButton} onPress={share} hitSlop={8}>
-                <Ionicons name="share-outline" size={ICON_SIZE} color={ICON_COLOR} />
+            <Animated.View
+              entering={FadeIn.duration(180)}
+              exiting={FadeOut.duration(120)}
+            >
+              <Pressable
+                style={styles.circleButton}
+                onPress={share}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="share-outline"
+                  size={ICON_SIZE}
+                  color={ICON_COLOR}
+                />
               </Pressable>
             </Animated.View>
           )}
@@ -189,8 +251,9 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
       <View
         style={[
           styles.content,
-          { paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right },
-        ]}>
+          { paddingLeft: insets.left, paddingRight: insets.right },
+        ]}
+      >
         <WebView
           ref={webViewRef}
           key={homeUrl}
@@ -214,7 +277,7 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
             }
           }}
           onError={handleError}
-          decelerationRate={Platform.OS === 'ios' ? 'normal' : undefined}
+          decelerationRate={Platform.OS === "ios" ? "normal" : undefined}
           allowsBackForwardNavigationGestures={!isArticle}
         />
         {isArticle && loading && <ArticleSkeleton />}
@@ -226,36 +289,36 @@ export function WebViewScreen({ homeUrl, onBack }: { homeUrl: string; onBack?: (
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingBottom: 12,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E2E2E2',
+    borderBottomColor: "#E2E2E2",
   },
   leftGroup: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
     minHeight: 40,
   },
   rightGroup: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
     minHeight: 40,
     gap: 10,
   },
   logoWrap: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 40,
   },
   logo: {
@@ -266,9 +329,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F2F2F2',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F2F2F2",
+    alignItems: "center",
+    justifyContent: "center",
   },
   backIcon: {
     marginLeft: -2,
