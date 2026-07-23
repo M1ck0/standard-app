@@ -19,7 +19,7 @@
     },
     "android": {
       "package": "com.app.standard",
-      "versionCode": 6006,
+      "versionCode": 60013,
       "adaptiveIcon": {
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
